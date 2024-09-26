@@ -24,10 +24,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const request = await req.json();
-  const { transaction_status } = await req.json();
+  // const request = await req.json();
+  const { transaction_status, order_id } = await req.json();
 
-  console.log(request);
+  console.log(transaction_status);
+  console.log(order_id);
 
   if (transaction_status === "capture") {
     console.log("Transaction success.");
