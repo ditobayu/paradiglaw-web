@@ -92,7 +92,8 @@ export async function POST(req: Request) {
       const chatRoomRef = collection(db, "room_chats");
       const chatRoomQuery = query(
         chatRoomRef,
-        where("participants", "array-contains", userId)
+        where("participants", "array-contains", userId),
+        where("participants", "array-contains", practitionerUserId)
       );
       const chatRoomSnapshot = await getDocs(chatRoomQuery);
 
