@@ -7,6 +7,9 @@ import {
   doc,
   getFirestore,
   collection,
+  addDoc,
+  serverTimestamp,
+  getDoc,
 } from "firebase/firestore/lite";
 const firebaseConfig = {
   apiKey: "AIzaSyBwewm2CflGKxuTH7IOv19SalqOC8ElaJw",
@@ -35,9 +38,6 @@ export async function POST(req: Request) {
   // const request = await req.json();
   const { transaction_status, order_id } = await req.json();
 
-  console.log(transaction_status);
-  console.log(order_id);
-
   if (transaction_status === "capture") {
     console.log("Transaction success.");
   } else if (transaction_status === "settlement") {
@@ -47,12 +47,81 @@ export async function POST(req: Request) {
     const q = query(transactionsCol, where("order_id", "==", order_id));
     const querySnapshot = await getDocs(q);
 
+    if (querySnapshot.empty) {
+      console.log("No transactions found.");
+      return;
+    }
+
     querySnapshot.forEach(async (transactionDoc) => {
       const transactionRef = doc(db, "transactions", transactionDoc.id);
       await updateDoc(transactionRef, {
         status: "settled",
       });
     });
+
+    const transactionData = querySnapshot.docs[0].data();
+    const userId = transactionData.user_id;
+    const practitionerId = transactionData.practitioner_id;
+
+    if (!practitionerId) {
+      // If practitionerId is null, get bootcamp data
+      const bootcampId = transactionData.bootcamp_id;
+
+      // Add user to bootcamp participants
+      await addDoc(collection(db, "bootcamps", bootcampId, "participants"), {
+        user_id: userId,
+        is_paid: true,
+        timestamp: serverTimestamp(),
+      });
+
+      return;
+    } else {
+      // Get practitioner data
+      const practitionerRef = doc(db, "practitioners", practitionerId);
+      const practitionerDoc = await getDoc(practitionerRef);
+
+      if (!practitionerDoc.exists()) {
+        console.log("Practitioner not found.");
+        return;
+      }
+
+      const practitionerData = practitionerDoc.data();
+      const practitionerUserId = practitionerData.userId;
+
+      // Check if room chat already exists
+      const chatRoomRef = collection(db, "room_chats");
+      const chatRoomQuery = query(
+        chatRoomRef,
+        where("participants", "array-contains", userId)
+      );
+      const chatRoomSnapshot = await getDocs(chatRoomQuery);
+
+      if (!chatRoomSnapshot.empty) {
+        // If the chat room exists, send message to room chat
+        const chatRoomId = chatRoomSnapshot.docs[0].id;
+        await addDoc(collection(db, "room_chats", chatRoomId, "messages"), {
+          senderId: practitionerUserId,
+          receiverId: userId,
+          message: "Terimakasih telah membeli layanan saya",
+          timestamp: serverTimestamp(),
+        });
+      } else {
+        // If chat room doesn't exist, create a new room and send message
+        const newChatRoomRef = await addDoc(collection(db, "room_chats"), {
+          participants: [userId, practitionerUserId],
+        });
+
+        await addDoc(
+          collection(db, "room_chats", newChatRoomRef.id, "messages"),
+          {
+            senderId: practitionerUserId,
+            receiverId: userId,
+            message: "Terimakasih telah membeli layanan saya",
+            timestamp: serverTimestamp(),
+          }
+        );
+      }
+    }
   } else if (transaction_status === "deny") {
   } else if (transaction_status === "cancel") {
     console.log("Transaction canceled.");
