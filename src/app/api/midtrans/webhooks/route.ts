@@ -19,7 +19,9 @@ const firebaseConfig = {
   messagingSenderId: "42047012111",
   appId: "1:42047012111:web:90430cb43900445cef527a",
 };
-
+function containsArray(s: string[] | string) {
+  return typeof s === "string" ? s : s.sort().join(".");
+}
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -92,9 +94,14 @@ export async function POST(req: Request) {
       const chatRoomRef = collection(db, "room_chats");
       const chatRoomQuery = query(
         chatRoomRef,
-        where("participants", "array-contains", userId),
-        where("participants", "array-contains", practitionerUserId)
+        // where("participants", "array-contains", userId),
+        where(
+          "participants",
+          "array-contains",
+          containsArray([practitionerUserId, userId])
+        )
       );
+      console.log(containsArray([practitionerUserId, userId]));
       const chatRoomSnapshot = await getDocs(chatRoomQuery);
 
       if (!chatRoomSnapshot.empty) {
