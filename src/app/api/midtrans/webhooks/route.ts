@@ -1,5 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore/lite";
+import {
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+  getFirestore,
+  collection,
+} from "firebase/firestore/lite";
 const firebaseConfig = {
   apiKey: "AIzaSyBwewm2CflGKxuTH7IOv19SalqOC8ElaJw",
   authDomain: "paradiglaw.firebaseapp.com",
@@ -34,8 +42,18 @@ export async function POST(req: Request) {
     console.log("Transaction success.");
   } else if (transaction_status === "settlement") {
     console.log("Transaction settled.");
+
+    const transactionsCol = collection(db, "transactions");
+    const q = query(transactionsCol, where("order_id", "==", order_id));
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach(async (transactionDoc) => {
+      const transactionRef = doc(db, "transactions", transactionDoc.id);
+      await updateDoc(transactionRef, {
+        status: "settled",
+      });
+    });
   } else if (transaction_status === "deny") {
-    console.log("Transaction denied.");
   } else if (transaction_status === "cancel") {
     console.log("Transaction canceled.");
   } else if (transaction_status === "expire") {
