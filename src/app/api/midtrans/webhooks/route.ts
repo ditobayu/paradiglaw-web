@@ -101,7 +101,6 @@ export async function POST(req: Request) {
           containsArray([practitionerUserId, userId])
         )
       );
-      console.log(containsArray([practitionerUserId, userId]));
       const chatRoomSnapshot = await getDocs(chatRoomQuery);
 
       if (!chatRoomSnapshot.empty) {
