@@ -12,12 +12,12 @@ import {
   getDoc,
 } from "firebase/firestore/lite";
 const firebaseConfig = {
-  apiKey: "AIzaSyBwewm2CflGKxuTH7IOv19SalqOC8ElaJw",
-  authDomain: "paradiglaw.firebaseapp.com",
-  projectId: "paradiglaw",
-  storageBucket: "paradiglaw.appspot.com",
-  messagingSenderId: "42047012111",
-  appId: "1:42047012111:web:90430cb43900445cef527a",
+  apiKey: process.env.NEXT_PUBLIC_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_APP_ID,
 };
 function containsArray(s: string[] | string) {
   return typeof s === "string" ? s : s.sort().join(".");
